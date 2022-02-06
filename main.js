@@ -6,20 +6,13 @@ if(window.location.href == "https://www.powerlanguage.co.uk/wordle/") {
 
         word.split("").forEach(letter => {
 
-            document.querySelector("body > game-app").shadowRoot.querySelector("#game > game-keyboard").shadowRoot.querySelector(`button[data-key='${letter}']`).click()
+            document.querySelector("body > game-app").shadowRoot.querySelector("#game > game-keyboard").shadowRoot.querySelector(`button[data-key='${letter}']`).click();
             
         });
 
-        document.querySelector("body > game-app").shadowRoot.querySelector("#game > game-keyboard").shadowRoot.querySelector(`button[data-key='↵']`).click()
+        document.querySelector("body > game-app").shadowRoot.querySelector("#game > game-keyboard").shadowRoot.querySelector(`button[data-key='↵']`).click();
 
     };
-
-    const game = { missing: [] };
-
-    round = 0;
-
-    if(confirm("Click OK to solve in one guess, click cancel to solve skillfully."))  enterWord(JSON.parse(window.localStorage.gameState)["solution"]);
-    else playGame();
 
     function playGame() {
 
@@ -37,7 +30,7 @@ if(window.location.href == "https://www.powerlanguage.co.uk/wordle/") {
                     validWords = validWords.filter(word => word.includes(letter));
                     status.invalid.forEach(index => validWords = validWords.filter(word => word[index] !== letter));
 
-                } else if(status.status == "correct") validWords = validWords.filter(word => word[status.place] == letter);
+                } else if(status.status == "correct") status.place.forEach(index => validWords = validWords.filter(word => word[index] == letter));
 
             });
 
@@ -55,29 +48,32 @@ if(window.location.href == "https://www.powerlanguage.co.uk/wordle/") {
 
             const letter = child.attributes.letter.value;
             const evaluation = child.attributes.evaluation.value;
+            const index = row.indexOf(child);
 
-            if(evaluation == "absent") {
+            if(evaluation == "absent" && !game.missing.includes(letter)) game.missing.push(letter);
+            else if(evaluation == "present") {
 
-                if(!game.missing.includes(letter)) game.missing.push(letter);
-
-            } else if(evaluation == "present") {
-
-                if(game[letter] && !game[letter].invalid.includes(row.indexOf(child))) game[letter].invalid.push(row.indexOf(child));
+                if(game[letter] && !game[letter].invalid.includes(index)) game[letter].invalid.push(index);
                 else {
 
                     game[letter] = {
                         status: "present",
                         place: null,
-                        invalid: [ row.indexOf(child) ]
+                        invalid: [ index ]
                     };
 
                 };
 
             } else if(evaluation == "correct") {
 
-                game[letter] = {
-                    status: "correct",
-                    place: row.indexOf(child)
+                if(game[letter] && !game[letter].place.includes(index)) game[letter].place.push(index);
+                else {
+
+                    game[letter] = {
+                        status: "correct",
+                        place: [ index ]
+                    };
+
                 };
 
             };
@@ -89,5 +85,11 @@ if(window.location.href == "https://www.powerlanguage.co.uk/wordle/") {
         setTimeout(playGame, 2000);
 
     };
+
+    const game = { missing: [] };
+    round = 0;
+
+    if(confirm("Click OK to solve in one guess, click cancel to solve skillfully.")) enterWord(JSON.parse(window.localStorage.gameState)["solution"]);
+    else playGame();
 
 };
